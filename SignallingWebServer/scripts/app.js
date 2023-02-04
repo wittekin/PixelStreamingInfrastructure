@@ -1,5 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+var playerElement = document.getElementById('player');
 /**
  * Class definitions
  * TODO: Move these to seperate files once we introduce a bundler
@@ -2234,7 +2235,10 @@ function registerLockedMouseEvents(playerElement) {
 // the cursor to have an effect over the video. Otherwise the cursor just
 // passes over the browser.
 function registerHoveringMouseEvents(playerElement) {
-    styleCursor = (inputOptions.hideBrowserCursor ? 'none' : 'default');
+    //styleCursor = (inputOptions.hideBrowserCursor ? 'none' : 'default');
+    styleCursor = 'default';
+
+    playerElement.onclick = function (e) {};
 
     playerElement.onmousemove = function (e) {
         let coord = normalizeAndQuantizeUnsigned(e.offsetX, e.offsetY);
@@ -2478,6 +2482,25 @@ function registerKeyboardEvents() {
         if (inputOptions.suppressBrowserKeys && isKeyCodeBrowserKey(e.keyCode)) {
             e.preventDefault();
         }
+        if (e.code === "Digit1")
+        {
+            switch (inputOptions.controlScheme) {
+                case ControlSchemeType.HoveringMouse:
+                    inputOptions.controlScheme = ControlSchemeType.LockedMouse;
+                    playerElement.requestPointerLock();
+                    registerLockedMouseEvents(playerElement);
+                    break;
+                case ControlSchemeType.LockedMouse:
+                    inputOptions.controlScheme = ControlSchemeType.HoveringMouse;
+                    document.exitPointerLock();
+                    registerHoveringMouseEvents(playerElement);
+                    break;
+                default:
+                    console.log(`ERROR: Unknown control scheme ${inputOptions.controlScheme}`);
+                    registerLockedMouseEvents(playerElement);
+                    break;
+            }
+        }
     };
 
     document.onkeypress = function(e) {
@@ -2635,7 +2658,7 @@ function connect() {
 // Config data received from WebRTC sender via the Cirrus web server
 function onConfig(config) {
     let playerDiv = document.getElementById('player');
-    let playerElement = setupWebRtcPlayer(playerDiv, config);
+    playerElement = setupWebRtcPlayer(playerDiv, config);
     resizePlayerStyle();
     registerMouse(playerElement);
 }
